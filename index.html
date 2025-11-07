@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Notes Prototype v3</title>
+<title>Code Notes Prototype v4</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -43,12 +43,22 @@
     justify-content: center;
   }
 
-  select {
+  select, input.new-category {
     background: var(--card-bg);
     color: var(--text);
     border: 1px solid #334155;
     border-radius: 8px;
     padding: 0.4rem 0.8rem;
+  }
+
+  button.add-category {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    color: var(--bg);
+    font-weight: bold;
+    cursor: pointer;
   }
 
   .notes-container {
@@ -150,6 +160,8 @@
     <select id="filterCategory">
       <option value="all">All</option>
     </select>
+    <input type="text" class="new-category" placeholder="New category name">
+    <button class="add-category">Add Category</button>
   </div>
 
   <div class="notes-container" id="notesContainer">
@@ -161,6 +173,8 @@
   const notesContainer = document.getElementById('notesContainer');
   const addBtn = document.getElementById('addNoteBtn');
   const filterSelect = document.getElementById('filterCategory');
+  const newCatInput = document.querySelector('.new-category');
+  const addCatBtn = document.querySelector('.add-category');
 
   function loadNotes() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -219,10 +233,19 @@
       <pre>${preHTML}</pre>
       <div class="note-buttons">
         <button class="edit-btn">Edit</button>
+        <button class="delete-btn">Delete</button>
       </div>
     `;
+
     note.querySelector('.edit-btn').addEventListener('click', () => {
       renderEditForm(note, title, desc, rawcode, category);
+    });
+
+    note.querySelector('.delete-btn').addEventListener('click', () => {
+      if (confirm(`Delete note "${title}"?`)) {
+        note.remove();
+        saveNotes();
+      }
     });
   }
 
@@ -273,6 +296,21 @@
       if (val === 'all' || n.dataset.category === val) n.style.display = 'flex';
       else n.style.display = 'none';
     });
+  });
+
+  addCatBtn.addEventListener('click', () => {
+    const newCat = newCatInput.value.trim();
+    if (newCat) {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const existingCats = Array.from(new Set(saved.map(n => n.category).filter(c => c && c.trim() !== '')));
+      if (!existingCats.includes(newCat)) {
+        existingCats.push(newCat);
+        filterSelect.innerHTML = '<option value="all">All</option>' +
+          existingCats.map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+      newCatInput.value = '';
+      alert(`Category "${newCat}" added!`);
+    }
   });
 
   addBtn.addEventListener('click', () => createNote());
