@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Notes Prototype</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f1f5f9;
+    --accent: #38bdf8;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  h1 {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--accent);
+  }
+
+  .notes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  .note, .add-note {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 1rem;
+    width: 280px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+  }
+
+  .note:hover, .add-note:hover {
+    transform: translateY(-4px);
+  }
+
+  .add-note {
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 3rem;
+    color: var(--accent);
+    border: 2px dashed var(--accent);
+  }
+
+  input, textarea {
+    background: #0f172a;
+    color: var(--text);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    resize: none;
+    font-family: monospace;
+  }
+
+  textarea {
+    min-height: 80px;
+  }
+
+  button {
+    align-self: flex-end;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    color: var(--bg);
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #0ea5e9;
+  }
+
+  @media (max-width: 600px) {
+    .note, .add-note {
+      width: 90%;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>Code Notes</h1>
+  <div class="notes-container" id="notesContainer">
+    <div class="add-note" id="addNoteBtn">+</div>
+  </div>
+
+<script>
+  const notesContainer = document.getElementById('notesContainer');
+  const addBtn = document.getElementById('addNoteBtn');
+
+  addBtn.addEventListener('click', () => {
+    const note = document.createElement('div');
+    note.className = 'note';
+
+    note.innerHTML = `
+      <input type="text" placeholder="Title">
+      <input type="text" placeholder="Description">
+      <textarea placeholder="Code or text here..."></textarea>
+      <button>Save</button>
+    `;
+
+    const saveBtn = note.querySelector('button');
+    saveBtn.addEventListener('click', () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saved';
+      note.querySelectorAll('input, textarea').forEach(el => el.disabled = true);
+    });
+
+    notesContainer.insertBefore(note, addBtn);
+  });
+</script>
+</body>
+</html>
