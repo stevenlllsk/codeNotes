@@ -1,139 +1,479 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Notes Prototype</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Code Notes — Prototype (C++)</title>
 <style>
-  :root {
-    --bg: #0f172a;
-    --card-bg: #1e293b;
-    --text: #f1f5f9;
+  :root{
+    --bg: #0b1220;
+    --panel: #0f1724;
+    --card: #0f172b;
+    --muted: #94a3b8;
     --accent: #38bdf8;
+    --accent-2: #60a5fa;
+    --surface: #0b1220;
     --radius: 12px;
+    --glass: rgba(255,255,255,0.03);
   }
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    margin: 0;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg, var(--bg) 0%, #061022 100%);
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .app {
+    max-width:1200px;
+    margin:40px auto;
+    padding:20px;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
   }
 
   h1 {
-    margin-bottom: 1.5rem;
-    text-align: center;
-    color: var(--accent);
+    margin:0;
+    font-size:1.4rem;
+    color:var(--accent);
+    letter-spacing:0.2px;
   }
+  .subtitle { color:var(--muted); font-size:0.95rem; }
 
+  /* NOTES GRID */
   .notes-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-    width: 100%;
-    max-width: 1200px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    align-items:flex-start;
+    justify-content:flex-start;
   }
 
-  .note, .add-note {
-    background: var(--card-bg);
+  /* Each card size is consistent using flex-basis; grows/shrinks to remain responsive */
+  .card, .add-note {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
     border-radius: var(--radius);
-    padding: 1rem;
-    width: 280px;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.2s;
-  }
-
-  .note:hover, .add-note:hover {
-    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+    padding:14px;
+    min-width:240px;
+    flex: 1 1 280px; /* allow responsive wrapping */
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    border: 1px solid rgba(255,255,255,0.03);
   }
 
   .add-note {
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 3rem;
-    color: var(--accent);
-    border: 2px dashed var(--accent);
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    border: 2px dashed rgba(56,189,248,0.25);
+    color:var(--accent);
+    font-size:2.2rem;
+    min-height:200px;
   }
 
-  input, textarea {
-    background: #0f172a;
-    color: var(--text);
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-    width: 100%;
-    resize: none;
-    font-family: monospace;
+  /* Note form layout */
+  .note-form {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .row {
+    display:flex;
+    gap:8px;
+  }
+
+  input[type="text"], textarea {
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.06);
+    padding:8px;
+    color:inherit;
+    border-radius:8px;
+    outline:none;
+    font-size:0.95rem;
+  }
+
+  input[type="text"] {
+    height:40px;
   }
 
   textarea {
-    min-height: 80px;
+    min-height:100px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    font-size:0.92rem;
+    line-height:1.4;
+    resize:vertical;
+  }
+
+  .actions {
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
   }
 
   button {
-    align-self: flex-end;
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    color: var(--bg);
-    font-weight: bold;
-    cursor: pointer;
+    padding:8px 12px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+    background:var(--accent);
+    color:#042033;
   }
 
-  button:hover {
-    background: #0ea5e9;
+  button.ghost {
+    background:transparent;
+    color:var(--muted);
+    border:1px solid rgba(255,255,255,0.03);
   }
 
-  @media (max-width: 600px) {
-    .note, .add-note {
-      width: 90%;
-    }
+  button.delete {
+    background: transparent;
+    color: #ff6b6b;
+    border: 1px solid rgba(255,107,107,0.12);
+  }
+
+  /* Display saved note */
+  .note-view .meta {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+
+  .note-title { font-weight:700; font-size:1rem; color:var(--accent-2); }
+  .note-desc { color:var(--muted); font-size:0.92rem; margin-top:6px; }
+
+  pre.code {
+    background: #071426;
+    padding:12px;
+    border-radius:8px;
+    overflow:auto;
+    max-height:360px;
+    font-family: ui-monospace, "Roboto Mono", Menlo, Monaco, monospace;
+    font-size:0.9rem;
+    margin:8px 0 0 0;
+    border:1px solid rgba(255,255,255,0.02);
+  }
+
+  /* Basic token styles for our simple highlighter */
+  .tok-key { color:#82aaff; font-weight:600; }       /* keywords */
+  .tok-type { color:#7ee787; }                       /* types */
+  .tok-num  { color:#fcae65; }                       /* numbers */
+  .tok-str  { color:#ffb86b; }                       /* string */
+  .tok-comment { color:#6b7280; font-style:italic; } /* comments */
+  .tok-func { color:#ffd580; }                       /* function names */
+
+  /* small responsive tweaks */
+  @media (max-width:640px){
+    header { flex-direction:column; align-items:flex-start; gap:6px; }
+    .notes-container { justify-content:center; }
+    .card, .add-note { flex: 1 1 92%; }
   }
 </style>
 </head>
 <body>
-  <h1>Code Notes</h1>
-  <div class="notes-container" id="notesContainer">
-    <div class="add-note" id="addNoteBtn">+</div>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Code Notes</h1>
+        <div class="subtitle">Prototype — saves to browser. First language: C++ (highlighting enabled).</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <small style="color:var(--muted)">Storage: <strong id="storageIndicator">localStorage</strong></small>
+      </div>
+    </header>
+
+    <section class="notes-container" id="notesContainer">
+      <!-- Add card -->
+      <div class="add-note" id="addNoteBtn" title="Create new note">+</div>
+    </section>
   </div>
 
 <script>
-  const notesContainer = document.getElementById('notesContainer');
-  const addBtn = document.getElementById('addNoteBtn');
+/* -------------------------
+   Utilities & storage
+   ------------------------- */
+const STORAGE_KEY = 'codeNotes_v1'; // bump if format changes
+const notesContainer = document.getElementById('notesContainer');
+const addNoteBtn = document.getElementById('addNoteBtn');
 
-  addBtn.addEventListener('click', () => {
-    const note = document.createElement('div');
-    note.className = 'note';
+function loadNotesFromStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch(e) {
+    console.error('Failed to parse notes from storage', e);
+    return [];
+  }
+}
 
-    note.innerHTML = `
-      <input type="text" placeholder="Title">
-      <input type="text" placeholder="Description">
-      <textarea placeholder="Code or text here..."></textarea>
-      <button>Save</button>
-    `;
+function saveNotesToStorage(notes){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  } catch(e){
+    console.error('Failed to save notes to storage', e);
+    alert('Unable to save note — storage error.');
+  }
+}
 
-    const saveBtn = note.querySelector('button');
-    saveBtn.addEventListener('click', () => {
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saved';
-      note.querySelectorAll('input, textarea').forEach(el => el.disabled = true);
-    });
+/* -------------------------
+   Lightweight C++ highlighter
+   - Not a full parser; uses regex to highlight common tokens
+   - Escapes HTML before inserting
+   ------------------------- */
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-    notesContainer.insertBefore(note, addBtn);
+/* Regex list and replacement order matters */
+const cppRules = [
+  // comments (multi-line and single-line) — do first
+  {r: /\/\*[\s\S]*?\*\//g, cls: 'tok-comment'},
+  {r: /\/\/.*/g, cls: 'tok-comment'},
+
+  // strings (double & single)
+  {r: /"([^"\\]|\\.)*"/g, cls: 'tok-str'},
+  {r: /'([^'\\]|\\.)*'/g, cls: 'tok-str'},
+
+  // numbers (hex, float, int)
+  {r: /\b0x[0-9A-Fa-f]+\b/g, cls: 'tok-num'},
+  {r: /\b\d+(\.\d+)?(f|F|l|L)?\b/g, cls: 'tok-num'},
+
+  // types (some common C++ types)
+  {r: /\b(?:int|long|short|char|float|double|bool|void|auto|size_t|string|std::string)\b/g, cls: 'tok-type'},
+
+  // keywords (control/decl)
+  {r: /\b(?:if|else|for|while|switch|case|break|continue|return|struct|class|public|private|protected|new|delete|try|catch|throw|using|namespace|template|typename|constexpr|const|static|inline|virtual|override|final)\b/g, cls: 'tok-key'},
+
+  // function names (simple heuristic: identifier followed by '(')
+  {r: /\b([A-Za-z_]\w*)(?=\s*\()/g, cls: 'tok-func'},
+
+  // identifiers (left as default)
+];
+
+function highlightCpp(code){
+  // escape first
+  let out = escapeHtml(code);
+
+  // apply each rule by replacing matches with span wrappers.
+  // Because we operate on already escaped HTML, we can safely wrap tokens.
+  cppRules.forEach(rule => {
+    out = out.replace(rule.r, match => `<span class="${rule.cls}">${match}</span>`);
   });
+  return out;
+}
+
+/* -------------------------
+   DOM: render functions
+   ------------------------- */
+
+function renderSavedNote(note){
+  // note: { id, title, desc, code, lang, createdAt }
+  const card = document.createElement('article');
+  card.className = 'card note-view';
+  card.dataset.id = note.id;
+
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const titleEl = document.createElement('div');
+  titleEl.className = 'note-title';
+  titleEl.textContent = note.title || '(untitled)';
+
+  const rightMeta = document.createElement('div');
+  rightMeta.style.display='flex';
+  rightMeta.style.gap='8px';
+  rightMeta.style.alignItems='center';
+
+  const langBadge = document.createElement('small');
+  langBadge.style.color='var(--muted)';
+  langBadge.textContent = note.lang ? note.lang.toUpperCase() : '---';
+  const timeEl = document.createElement('small');
+  timeEl.style.color='var(--muted)';
+  timeEl.textContent = (new Date(note.createdAt)).toLocaleString();
+
+  rightMeta.appendChild(langBadge);
+  rightMeta.appendChild(timeEl);
+
+  meta.appendChild(titleEl);
+  meta.appendChild(rightMeta);
+
+  const descEl = document.createElement('div');
+  descEl.className = 'note-desc';
+  descEl.textContent = note.desc || '';
+
+  // code block (highlighted)
+  const pre = document.createElement('pre');
+  pre.className = 'code';
+  pre.innerHTML = highlightCpp(note.code || '');
+
+  // actions (delete)
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'delete';
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.addEventListener('click', () => {
+    if(!confirm('Delete this note?')) return;
+    deleteNoteById(note.id);
+  });
+  actions.appendChild(deleteBtn);
+
+  card.appendChild(meta);
+  card.appendChild(descEl);
+  card.appendChild(pre);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function renderEditableNote(){
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.dataset.temp = 'true';
+
+  const form = document.createElement('form');
+  form.className = 'note-form';
+
+  const title = document.createElement('input');
+  title.type = 'text';
+  title.placeholder = 'Title (e.g. Binary Search)';
+  title.name = 'title';
+
+  const desc = document.createElement('input');
+  desc.type = 'text';
+  desc.placeholder = 'Short description';
+  desc.name = 'desc';
+
+  const code = document.createElement('textarea');
+  code.placeholder = `Write your C++ code or notes here...
+// example:
+#include <bits/stdc++.h>
+using namespace std;
+
+int main(){
+  cout << "Hello C++\\n";
+  return 0;
+}`;
+  code.name = 'code';
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'ghost';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => card.remove());
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', () => {
+    const payload = {
+      title: title.value.trim(),
+      desc: desc.value.trim(),
+      code: code.value,
+      lang: 'cpp',
+      createdAt: Date.now(),
+      id: 'n_' + Math.random().toString(36).slice(2,9)
+    };
+
+    // add to storage & render locked card
+    createAndStoreNote(payload, card);
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+
+  form.appendChild(title);
+  form.appendChild(desc);
+  form.appendChild(code);
+  form.appendChild(actions);
+  card.appendChild(form);
+  return card;
+}
+
+/* -------------------------
+   CRUD helpers
+   ------------------------- */
+
+function refreshNotesUI(){
+  // clear existing saved notes (except add-note) then re-render from storage
+  // First remove all children except addNoteBtn
+  Array.from(notesContainer.children).forEach(child=>{
+    if(child === addNoteBtn) return;
+    notesContainer.removeChild(child);
+  });
+
+  const notes = loadNotesFromStorage();
+  notes.sort((a,b) => b.createdAt - a.createdAt); // newest first
+  notes.forEach(n => {
+    const el = renderSavedNote(n);
+    notesContainer.insertBefore(el, addNoteBtn);
+  });
+}
+
+function createAndStoreNote(noteObj, tempCardElement){
+  // store
+  const notes = loadNotesFromStorage();
+  notes.push(noteObj);
+  saveNotesToStorage(notes);
+
+  // replace the temp card with rendered saved card
+  const rendered = renderSavedNote(noteObj);
+  if(tempCardElement && tempCardElement.parentNode){
+    notesContainer.insertBefore(rendered, tempCardElement);
+    tempCardElement.remove();
+  } else {
+    notesContainer.insertBefore(rendered, addNoteBtn);
+  }
+}
+
+function deleteNoteById(id){
+  let notes = loadNotesFromStorage();
+  notes = notes.filter(n => n.id !== id);
+  saveNotesToStorage(notes);
+  refreshNotesUI();
+}
+
+/* -------------------------
+   Init & event wiring
+   ------------------------- */
+addNoteBtn.addEventListener('click', () => {
+  // insert editable card just before add button
+  // ensure only one unsaved form exists at a time for simplicity
+  const existingTemp = notesContainer.querySelector('[data-temp="true"]');
+  if(existingTemp) {
+    existingTemp.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  const formCard = renderEditableNote();
+  notesContainer.insertBefore(formCard, addNoteBtn);
+  formCard.scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+(function init(){
+  refreshNotesUI();
+})();
 </script>
 </body>
 </html>
