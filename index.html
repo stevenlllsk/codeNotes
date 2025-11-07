@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Notes Prototype v2</title>
+<title>Code Notes Prototype v3</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -11,7 +11,7 @@
     --text: #f1f5f9;
     --accent: #38bdf8;
     --radius: 12px;
-    --kw: #f472b6; /* C++ keywords */
+    --kw: #f472b6;
     --type: #a3e635;
     --num: #facc15;
     --comment: #94a3b8;
@@ -30,9 +30,25 @@
   }
 
   h1 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     text-align: center;
     color: var(--accent);
+  }
+
+  .filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  select {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
   }
 
   .notes-container {
@@ -49,11 +65,11 @@
     border-radius: var(--radius);
     padding: 1rem;
     width: 300px;
-    min-height: 220px;
+    min-height: 230px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.2s, border 0.2s;
+    transition: transform 0.2s;
   }
 
   .note:hover, .add-note:hover {
@@ -69,7 +85,7 @@
     border: 2px dashed var(--accent);
   }
 
-  input, textarea {
+  input, textarea, select.category {
     background: #0f172a;
     color: var(--text);
     border: 1px solid #334155;
@@ -86,7 +102,6 @@
   }
 
   button {
-    align-self: flex-end;
     background: var(--accent);
     border: none;
     border-radius: 8px;
@@ -94,6 +109,7 @@
     color: var(--bg);
     font-weight: bold;
     cursor: pointer;
+    margin-top: 0.3rem;
   }
 
   button:hover {
@@ -110,92 +126,154 @@
     overflow-x: auto;
   }
 
-  /* Simple C++ syntax highlight */
+  .note-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.3rem;
+  }
+
   .kw { color: var(--kw); }
   .type { color: var(--type); }
   .num { color: var(--num); }
   .comment { color: var(--comment); }
 
   @media (max-width: 600px) {
-    .note, .add-note {
-      width: 90%;
-    }
+    .note, .add-note { width: 90%; }
   }
 </style>
 </head>
 <body>
   <h1>Code Notes</h1>
+
+  <div class="filter-bar">
+    <label for="filterCategory">Filter by Category:</label>
+    <select id="filterCategory">
+      <option value="all">All</option>
+    </select>
+  </div>
+
   <div class="notes-container" id="notesContainer">
     <div class="add-note" id="addNoteBtn">+</div>
   </div>
 
 <script>
+  const STORAGE_KEY = 'codeNotes';
   const notesContainer = document.getElementById('notesContainer');
   const addBtn = document.getElementById('addNoteBtn');
-  const STORAGE_KEY = 'codeNotes';
+  const filterSelect = document.getElementById('filterCategory');
 
   function loadNotes() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    saved.forEach(n => createNote(n.title, n.desc, n.code, true));
+    saved.forEach(n => createNote(n.title, n.desc, n.code, n.category, true));
+    updateCategoryFilter(saved);
   }
 
   function saveNotes() {
-    const allNotes = [...document.querySelectorAll('.note')].map(note => {
-      const title = note.querySelector('h3')?.textContent || note.querySelector('input')?.value;
-      const desc = note.querySelector('p')?.textContent || note.querySelectorAll('input')[1]?.value;
-      const code = note.dataset.rawcode || '';
-      return { title, desc, code };
-    });
+    const allNotes = [...document.querySelectorAll('.note')].map(note => ({
+      title: note.dataset.title,
+      desc: note.dataset.desc,
+      code: note.dataset.rawcode,
+      category: note.dataset.category
+    }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotes));
+    updateCategoryFilter(allNotes);
+  }
+
+  function updateCategoryFilter(notes) {
+    const categories = Array.from(new Set(notes.map(n => n.category).filter(c => c && c.trim() !== '')));
+    const current = filterSelect.value;
+    filterSelect.innerHTML = '<option value="all">All</option>' +
+      categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    filterSelect.value = current || 'all';
   }
 
   function highlightCPP(code) {
     return code
       .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
-      .replace(/\b(int|float|double|char|bool|void|return|if|else|for|while|class|struct|public|private|include|using|namespace|std)\b/g,
-               '<span class="kw">$1</span>')
+      .replace(/\b(int|float|double|char|bool|void|return|if|else|for|while|class|struct|public|private|include|using|namespace|std)\b/g, '<span class="kw">$1</span>')
       .replace(/\b(\d+)\b/g, '<span class="num">$1</span>')
       .replace(/\b(string)\b/g, '<span class="type">$1</span>');
   }
 
-  function createNote(title = '', desc = '', code = '', fromLoad = false) {
+  function createNote(title = '', desc = '', code = '', category = '', fromLoad = false) {
     const note = document.createElement('div');
     note.className = 'note';
+    note.dataset.title = title;
+    note.dataset.desc = desc;
+    note.dataset.rawcode = code;
+    note.dataset.category = category;
 
-    if (fromLoad) {
-      const preHTML = highlightCPP(code);
-      note.dataset.rawcode = code;
-      note.innerHTML = `
-        <h3>${title}</h3>
-        <p>${desc}</p>
-        <pre>${preHTML}</pre>
-      `;
-    } else {
-      note.innerHTML = `
-        <input type="text" placeholder="Title" value="${title}">
-        <input type="text" placeholder="Description" value="${desc}">
-        <textarea placeholder="Code or text here...">${code}</textarea>
-        <button>Save</button>
-      `;
-      const saveBtn = note.querySelector('button');
-      saveBtn.addEventListener('click', () => {
-        const t = note.querySelectorAll('input')[0].value;
-        const d = note.querySelectorAll('input')[1].value;
-        const c = note.querySelector('textarea').value;
-        note.dataset.rawcode = c;
-        const preHTML = highlightCPP(c);
-
-        note.innerHTML = `
-          <h3>${t}</h3>
-          <p>${d}</p>
-          <pre>${preHTML}</pre>
-        `;
-        saveNotes();
-      });
-    }
+    if (fromLoad) renderSavedNote(note);
+    else renderEditForm(note, title, desc, code, category);
 
     notesContainer.insertBefore(note, addBtn);
   }
+
+  function renderSavedNote(note) {
+    const { title, desc, rawcode, category } = note.dataset;
+    const preHTML = highlightCPP(rawcode);
+    note.innerHTML = `
+      <h3>${title}</h3>
+      <p><strong>${category || 'Uncategorized'}</strong></p>
+      <p>${desc}</p>
+      <pre>${preHTML}</pre>
+      <div class="note-buttons">
+        <button class="edit-btn">Edit</button>
+      </div>
+    `;
+    note.querySelector('.edit-btn').addEventListener('click', () => {
+      renderEditForm(note, title, desc, rawcode, category);
+    });
+  }
+
+  function renderEditForm(note, title, desc, code, category) {
+    note.innerHTML = `
+      <input type="text" placeholder="Title" value="${title}">
+      <input type="text" placeholder="Description" value="${desc}">
+      <select class="category">
+        <option value="">Uncategorized</option>
+        ${getCategoryOptions(category)}
+      </select>
+      <textarea placeholder="Code or text here...">${code}</textarea>
+      <div class="note-buttons">
+        <button class="save-btn">Save</button>
+        <button class="cancel-btn">Cancel</button>
+      </div>
+    `;
+
+    note.querySelector('.save-btn').addEventListener('click', () => {
+      const t = note.querySelectorAll('input')[0].value;
+      const d = note.querySelectorAll('input')[1].value;
+      const c = note.querySelector('textarea').value;
+      const cat = note.querySelector('.category').value;
+      note.dataset.title = t;
+      note.dataset.desc = d;
+      note.dataset.rawcode = c;
+      note.dataset.category = cat;
+      saveNotes();
+      renderSavedNote(note);
+    });
+
+    note.querySelector('.cancel-btn').addEventListener('click', () => {
+      if (note.dataset.title) renderSavedNote(note);
+      else note.remove();
+    });
+  }
+
+  function getCategoryOptions(selected) {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const categories = Array.from(new Set(saved.map(n => n.category).filter(c => c && c.trim() !== '')));
+    return categories.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('');
+  }
+
+  filterSelect.addEventListener('change', () => {
+    const val = filterSelect.value;
+    const allNotes = document.querySelectorAll('.note');
+    allNotes.forEach(n => {
+      if (val === 'all' || n.dataset.category === val) n.style.display = 'flex';
+      else n.style.display = 'none';
+    });
+  });
 
   addBtn.addEventListener('click', () => createNote());
   window.addEventListener('load', loadNotes);
