@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Notes Prototype v5</title>
+<title>Code Notes Prototype v6</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -214,12 +214,21 @@
     return JSON.parse(localStorage.getItem(STORAGE_CATS) || '[]');
   }
 
+  // Escape HTML before highlighting
+  function escapeHTML(str) {
+    return str.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+  }
+
+  // C++ syntax highlighter
   function highlightCPP(code) {
-    return code
+    let escaped = escapeHTML(code);
+    return escaped
       .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
-      .replace(/\b(int|float|double|char|bool|void|return|if|else|for|while|class|struct|public|private|include|using|namespace|std)\b/g, '<span class="kw">$1</span>')
-      .replace(/\b(\d+)\b/g, '<span class="num">$1</span>')
-      .replace(/\b(string)\b/g, '<span class="type">$1</span>');
+      .replace(/\b(int|float|double|char|bool|void|return|if|else|for|while|class|struct|public|private|include|using|namespace|std|cout|endl)\b/g, '<span class="kw">$1</span>')
+      .replace(/\b(string)\b/g, '<span class="type">$1</span>')
+      .replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
   }
 
   // Create note card
