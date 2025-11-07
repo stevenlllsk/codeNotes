@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Notes Prototype v4</title>
+<title>Code Notes Prototype v5</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -169,19 +169,24 @@
   </div>
 
 <script>
-  const STORAGE_KEY = 'codeNotes';
+  const STORAGE_NOTES = 'codeNotes';
+  const STORAGE_CATS = 'codeCategories';
+
   const notesContainer = document.getElementById('notesContainer');
   const addBtn = document.getElementById('addNoteBtn');
   const filterSelect = document.getElementById('filterCategory');
   const newCatInput = document.querySelector('.new-category');
   const addCatBtn = document.querySelector('.add-category');
 
+  // Load data
   function loadNotes() {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const saved = JSON.parse(localStorage.getItem(STORAGE_NOTES) || '[]');
+    const categories = JSON.parse(localStorage.getItem(STORAGE_CATS) || '[]');
     saved.forEach(n => createNote(n.title, n.desc, n.code, n.category, true));
-    updateCategoryFilter(saved);
+    updateCategoryFilter(categories);
   }
 
+  // Save all notes to localStorage
   function saveNotes() {
     const allNotes = [...document.querySelectorAll('.note')].map(note => ({
       title: note.dataset.title,
@@ -189,16 +194,24 @@
       code: note.dataset.rawcode,
       category: note.dataset.category
     }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotes));
-    updateCategoryFilter(allNotes);
+    localStorage.setItem(STORAGE_NOTES, JSON.stringify(allNotes));
   }
 
-  function updateCategoryFilter(notes) {
-    const categories = Array.from(new Set(notes.map(n => n.category).filter(c => c && c.trim() !== '')));
-    const current = filterSelect.value;
+  // Save category list
+  function saveCategories(categories) {
+    localStorage.setItem(STORAGE_CATS, JSON.stringify(categories));
+    updateCategoryFilter(categories);
+  }
+
+  // Update filter dropdown and category selectors
+  function updateCategoryFilter(categories) {
     filterSelect.innerHTML = '<option value="all">All</option>' +
       categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    filterSelect.value = current || 'all';
+  }
+
+  // Get current categories
+  function getCategories() {
+    return JSON.parse(localStorage.getItem(STORAGE_CATS) || '[]');
   }
 
   function highlightCPP(code) {
@@ -209,6 +222,7 @@
       .replace(/\b(string)\b/g, '<span class="type">$1</span>');
   }
 
+  // Create note card
   function createNote(title = '', desc = '', code = '', category = '', fromLoad = false) {
     const note = document.createElement('div');
     note.className = 'note';
@@ -223,6 +237,7 @@
     notesContainer.insertBefore(note, addBtn);
   }
 
+  // Display mode
   function renderSavedNote(note) {
     const { title, desc, rawcode, category } = note.dataset;
     const preHTML = highlightCPP(rawcode);
@@ -249,13 +264,15 @@
     });
   }
 
+  // Edit form
   function renderEditForm(note, title, desc, code, category) {
+    const categories = getCategories();
     note.innerHTML = `
       <input type="text" placeholder="Title" value="${title}">
       <input type="text" placeholder="Description" value="${desc}">
       <select class="category">
         <option value="">Uncategorized</option>
-        ${getCategoryOptions(category)}
+        ${categories.map(c => `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`).join('')}
       </select>
       <textarea placeholder="Code or text here...">${code}</textarea>
       <div class="note-buttons">
@@ -283,12 +300,7 @@
     });
   }
 
-  function getCategoryOptions(selected) {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const categories = Array.from(new Set(saved.map(n => n.category).filter(c => c && c.trim() !== '')));
-    return categories.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('');
-  }
-
+  // Filter by category
   filterSelect.addEventListener('change', () => {
     const val = filterSelect.value;
     const allNotes = document.querySelectorAll('.note');
@@ -298,18 +310,19 @@
     });
   });
 
+  // Add new category
   addCatBtn.addEventListener('click', () => {
     const newCat = newCatInput.value.trim();
     if (newCat) {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      const existingCats = Array.from(new Set(saved.map(n => n.category).filter(c => c && c.trim() !== '')));
-      if (!existingCats.includes(newCat)) {
-        existingCats.push(newCat);
-        filterSelect.innerHTML = '<option value="all">All</option>' +
-          existingCats.map(c => `<option value="${c}">${c}</option>`).join('');
+      const categories = getCategories();
+      if (!categories.includes(newCat)) {
+        categories.push(newCat);
+        saveCategories(categories);
+        alert(`Category "${newCat}" added!`);
+      } else {
+        alert('Category already exists!');
       }
       newCatInput.value = '';
-      alert(`Category "${newCat}" added!`);
     }
   });
 
