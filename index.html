@@ -3,340 +3,582 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Notes Prototype v6</title>
+<title>Code Notes</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/autoloader/prism-autoloader.min.js"></script>
 <style>
-  :root {
-    --bg: #0f172a;
-    --card-bg: #1e293b;
-    --text: #f1f5f9;
-    --accent: #38bdf8;
-    --radius: 12px;
-    --kw: #f472b6;
-    --type: #a3e635;
-    --num: #facc15;
-    --comment: #94a3b8;
-  }
+    :root {
+        --bg: #0d1117;
+        --text: #e6edf3;
+        --card-bg: #161b22;
+        --input-bg: #0d1117;
+        --border: #30363d;
+        --accent: #58a6ff;
+        --shadow: rgba(0,0,0,0.4);
+        --inline-code-bg: #30363d;
+        --inline-code-color: #79c0ff;
+        --success: #238636;
+    }
+    body {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px 20px 80px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    h1 { text-align: center; margin: 10px 0 20px; color: #58a6ff; }
+  
+    .top-right { position: fixed; top: 14px; right: 18px; font-weight: bold; color: #8b949e; font-size: 0.95em; z-index: 100; }
+    .language-badge {
+        position: fixed; top: 14px; left: 18px; background: #1f6feb; color: white;
+        padding: 7px 14px; border-radius: 8px; font-weight: bold; font-size: 0.95em; z-index: 100;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+  
+    .container {
+        max-width: 720px; margin: 0 auto 25px; background: var(--card-bg); padding: 22px;
+        border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 8px 25px var(--shadow);
+    }
+  
+    .search-container { margin: 15px auto; max-width: 720px; position: relative; }
+    #search { width: 100%; padding: 14px 50px 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+              background: var(--input-bg); color: var(--text); font-size: 1em; }
+    #search::placeholder { color: #8b949e; }
+    .search-icon { position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+                   color: #8b949e; font-size: 1.3em; pointer-events: none; }
+  
+    input, textarea, select, button {
+        width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--input-bg); color: var(--text); box-sizing: border-box; font-family: inherit;
+    }
+    textarea { min-height: 110px; resize: vertical; font-family: 'Courier New', monospace; }
+  
+    button { cursor: pointer; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: #238636; color: white; border: none; }
+    .btn-primary:hover { background: #2ea043; }
+    .btn-success { background: #238636; }
+    .btn-danger { background: #da3633; }
+    .btn-add-block {
+        background: transparent; border: 2px dashed #58a6ff; color: #58a6ff; padding: 10px; margin: 10px 0;
+    }
+    .btn-add-block:hover { background: #1f6feb22; }
+  
+    .code-block { position: relative; margin-bottom: 20px; }
+    .remove-block {
+        position: absolute; top: 8px; right: 8px; background: #da3633; color: white; border: none;
+        width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; z-index: 10;
+    }
+    .remove-block:hover { background: #c2251f; }
+    .block-title {
+        width: 100%; padding: 10px; margin: 0 0 8px 0; font-weight: bold; font-size: 0.95em;
+        background: #1f6feb22; border: 1px solid #58a6ff44; color: #58a6ff;
+    }
+  
+    .card { background: var(--card-bg); padding: 20px; margin: 18px auto; border-radius: 12px;
+            border: 1px solid var(--border); box-shadow: 0 6px 16px var(--shadow);
+            transition: transform 0.2s, border 0.2s; }
+    .card:hover { transform: translateY(-4px); border-color: #58a6ff; }
+  
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start;
+                   flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .card-header h3 { margin: 0; color: #58a6ff; font-size: 1.5em; }
+    .category-tag { background: #1f6feb; color: white; padding: 6px 12px; border-radius: 20px;
+                    font-size: 0.85em; font-weight: bold; }
+  
+    .inline-code {
+        background: var(--inline-code-bg); color: var(--inline-code-color); padding: 2px 8px;
+        border-radius: 6px; font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.95em; font-weight: 500;
+    }
+  
+    /* Pre element styling for copy button */
+    pre[class*="language-"] {
+        background: #0d1117 !important; border: 1px solid #30363d; border-radius: 10px;
+        padding: 16px !important; margin: 14px 0 !important; overflow-x: auto;
+        position: relative;
+    }
+    code[class*="language-"] { font-family: 'Fira Code', 'Courier New', monospace !important; font-size: 0.95em; }
+  
+    /* Copy Button Styling */
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #30363d;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8em;
+        cursor: pointer;
+        z-index: 5;
+        opacity: 0.8;
+        transition: opacity 0.2s, background 0.2s;
+        width: auto;
+    }
+    .copy-btn:hover {
+        opacity: 1;
+        background: #444c56;
+    }
+  
+    .block-subtitle {
+        margin: 20px 0 8px; font-size: 1.1em; color: #58a6ff; font-weight: bold; border-bottom: 1px solid #30363d; padding-bottom: 4px;
+    }
+  
+    .card-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px; }
+    .card-buttons button { padding: 9px 16px; width: auto; border: none; border-radius: 8px; font-weight: bold; }
+  
+    footer {
+        margin-top: auto; text-align: center; padding: 20px; color: #8b949e; font-size: 0.9em;
+        border-top: 1px solid var(--border);
+    }
+    footer a { color: #58a6ff; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    margin: 0;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-  }
+    /* Toast Notification System Styles */
+    #toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
 
-  h1 {
-    margin-bottom: 1rem;
-    text-align: center;
-    color: var(--accent);
-  }
+    .toast {
+        background: var(--success);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-top: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        font-weight: bold;
+        min-width: 200px;
+        text-align: center;
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .toast.error {
+        background: #da3633;
+    }
 
-  .filter-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  select, input.new-category {
-    background: var(--card-bg);
-    color: var(--text);
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-  }
-
-  button.add-category {
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    color: var(--bg);
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .notes-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    justify-content: center;
-    width: 100%;
-    max-width: 1200px;
-  }
-
-  .note, .add-note {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding: 1rem;
-    width: 300px;
-    min-height: 230px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.2s;
-  }
-
-  .note:hover, .add-note:hover {
-    transform: translateY(-4px);
-  }
-
-  .add-note {
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 3rem;
-    color: var(--accent);
-    border: 2px dashed var(--accent);
-  }
-
-  input, textarea, select.category {
-    background: #0f172a;
-    color: var(--text);
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-    width: 100%;
-    font-family: monospace;
-  }
-
-  textarea {
-    min-height: 100px;
-    resize: none;
-  }
-
-  button {
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    color: var(--bg);
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 0.3rem;
-  }
-
-  button:hover {
-    background: #0ea5e9;
-  }
-
-  pre {
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 0.5rem;
-    white-space: pre-wrap;
-    font-family: monospace;
-    overflow-x: auto;
-  }
-
-  .note-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.3rem;
-  }
-
-  .kw { color: var(--kw); }
-  .type { color: var(--type); }
-  .num { color: var(--num); }
-  .comment { color: var(--comment); }
-
-  @media (max-width: 600px) {
-    .note, .add-note { width: 90%; }
-  }
 </style>
 </head>
 <body>
-  <h1>Code Notes</h1>
-
-  <div class="filter-bar">
-    <label for="filterCategory">Filter by Category:</label>
-    <select id="filterCategory">
-      <option value="all">All</option>
+<div class="language-badge" id="current-lang">HTML</div>
+<div class="top-right">v0.2.0</div> <h1>Code Notes</h1>
+<div class="container">
+    <h2 id="form-title">Add New Note</h2>
+    <input type="text" id="title" placeholder="Note Title">
+    <textarea id="definition" placeholder="Explanation (use *- for bullets, ''keyword'' for inline code)"></textarea>
+    <input type="text" id="category" placeholder="Category (e.g. Signals, UI, Loops)">
+    <select id="language" onchange="switchLanguage()">
+        <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="javascript">JavaScript</option>
+        <option value="java">Java</option>
+        <option value="kotlin">Kotlin</option> <option value="gdscript">GDScript</option>
+        <option value="cpp">C++</option>
+        <option value="csharp">C#</option>
+        <option value="lua">Lua</option>
+        <option value="python">Python</option>
     </select>
-    <input type="text" class="new-category" placeholder="New category name">
-    <button class="add-category">Add Category</button>
-  </div>
+    <div id="code-blocks">
+        <div class="code-block">
+            <textarea class="code-input" placeholder="Main code block..."></textarea>
+        </div>
+    </div>
 
-  <div class="notes-container" id="notesContainer">
-    <div class="add-note" id="addNoteBtn">+</div>
-  </div>
+    <button class="btn-add-block" onclick="addCodeBlock()">+ Add Another Code Block (with optional title)</button>
 
+    <button class="btn-primary" id="add-btn" onclick="addNote()">Add Note</button>
+    <button class="btn-success" id="update-btn" style="display:none;" onclick="updateNote()">Update Note</button>
+
+</div>
+<div class="search-container">
+    <input type="text" id="search" placeholder="Search notes by title..." oninput="renderNotes()">
+    <div class="search-icon">Search</div>
+</div>
+<div class="container">
+    <h2>Filter by Category</h2>
+    <select id="filter" onchange="renderNotes()">
+        <option value="all">All Categories</option>
+    </select>
+</div>
+<div class="container">
+    <h2>Export / Import</h2>
+    <button onclick="exportNotes()" class="btn-primary">Export Notes (JSON)</button>
+    <input type="file" id="import-file" accept=".json" style="display:inline-block;width:auto;margin:10px 0;">
+    <button onclick="importNotes()" style="width:auto;display:inline-block;">Import Notes</button>
+</div>
+<div id="notes-container"></div>
+<div id="toast-container"></div>
+<footer>
+    Code Notes v0.2.0 — Built with love for coders(Heart) </footer>
 <script>
-  const STORAGE_NOTES = 'codeNotes';
-  const STORAGE_CATS = 'codeCategories';
-
-  const notesContainer = document.getElementById('notesContainer');
-  const addBtn = document.getElementById('addNoteBtn');
-  const filterSelect = document.getElementById('filterCategory');
-  const newCatInput = document.querySelector('.new-category');
-  const addCatBtn = document.querySelector('.add-category');
-
-  // Load data
-  function loadNotes() {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_NOTES) || '[]');
-    const categories = JSON.parse(localStorage.getItem(STORAGE_CATS) || '[]');
-    saved.forEach(n => createNote(n.title, n.desc, n.code, n.category, true));
-    updateCategoryFilter(categories);
-  }
-
-  // Save all notes to localStorage
-  function saveNotes() {
-    const allNotes = [...document.querySelectorAll('.note')].map(note => ({
-      title: note.dataset.title,
-      desc: note.dataset.desc,
-      code: note.dataset.rawcode,
-      category: note.dataset.category
-    }));
-    localStorage.setItem(STORAGE_NOTES, JSON.stringify(allNotes));
-  }
-
-  // Save category list
-  function saveCategories(categories) {
-    localStorage.setItem(STORAGE_CATS, JSON.stringify(categories));
-    updateCategoryFilter(categories);
-  }
-
-  // Update filter dropdown and category selectors
-  function updateCategoryFilter(categories) {
-    filterSelect.innerHTML = '<option value="all">All</option>' +
-      categories.map(c => `<option value="${c}">${c}</option>`).join('');
-  }
-
-  // Get current categories
-  function getCategories() {
-    return JSON.parse(localStorage.getItem(STORAGE_CATS) || '[]');
-  }
-
-  // Escape HTML before highlighting
-  function escapeHTML(str) {
-    return str.replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
-  }
-
-  // C++ syntax highlighter
-  function highlightCPP(code) {
-    let escaped = escapeHTML(code);
-    return escaped
-      .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
-      .replace(/\b(int|float|double|char|bool|void|return|if|else|for|while|class|struct|public|private|include|using|namespace|std|cout|endl)\b/g, '<span class="kw">$1</span>')
-      .replace(/\b(string)\b/g, '<span class="type">$1</span>')
-      .replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
-  }
-
-  // Create note card
-  function createNote(title = '', desc = '', code = '', category = '', fromLoad = false) {
-    const note = document.createElement('div');
-    note.className = 'note';
-    note.dataset.title = title;
-    note.dataset.desc = desc;
-    note.dataset.rawcode = code;
-    note.dataset.category = category;
-
-    if (fromLoad) renderSavedNote(note);
-    else renderEditForm(note, title, desc, code, category);
-
-    notesContainer.insertBefore(note, addBtn);
-  }
-
-  // Display mode
-  function renderSavedNote(note) {
-    const { title, desc, rawcode, category } = note.dataset;
-    const preHTML = highlightCPP(rawcode);
-    note.innerHTML = `
-      <h3>${title}</h3>
-      <p><strong>${category || 'Uncategorized'}</strong></p>
-      <p>${desc}</p>
-      <pre>${preHTML}</pre>
-      <div class="note-buttons">
-        <button class="edit-btn">Edit</button>
-        <button class="delete-btn">Delete</button>
-      </div>
-    `;
-
-    note.querySelector('.edit-btn').addEventListener('click', () => {
-      renderEditForm(note, title, desc, rawcode, category);
-    });
-
-    note.querySelector('.delete-btn').addEventListener('click', () => {
-      if (confirm(`Delete note "${title}"?`)) {
-        note.remove();
-        saveNotes();
-      }
-    });
-  }
-
-  // Edit form
-  function renderEditForm(note, title, desc, code, category) {
-    const categories = getCategories();
-    note.innerHTML = `
-      <input type="text" placeholder="Title" value="${title}">
-      <input type="text" placeholder="Description" value="${desc}">
-      <select class="category">
-        <option value="">Uncategorized</option>
-        ${categories.map(c => `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`).join('')}
-      </select>
-      <textarea placeholder="Code or text here...">${code}</textarea>
-      <div class="note-buttons">
-        <button class="save-btn">Save</button>
-        <button class="cancel-btn">Cancel</button>
-      </div>
-    `;
-
-    note.querySelector('.save-btn').addEventListener('click', () => {
-      const t = note.querySelectorAll('input')[0].value;
-      const d = note.querySelectorAll('input')[1].value;
-      const c = note.querySelector('textarea').value;
-      const cat = note.querySelector('.category').value;
-      note.dataset.title = t;
-      note.dataset.desc = d;
-      note.dataset.rawcode = c;
-      note.dataset.category = cat;
-      saveNotes();
-      renderSavedNote(note);
-    });
-
-    note.querySelector('.cancel-btn').addEventListener('click', () => {
-      if (note.dataset.title) renderSavedNote(note);
-      else note.remove();
-    });
-  }
-
-  // Filter by category
-  filterSelect.addEventListener('change', () => {
-    const val = filterSelect.value;
-    const allNotes = document.querySelectorAll('.note');
-    allNotes.forEach(n => {
-      if (val === 'all' || n.dataset.category === val) n.style.display = 'flex';
-      else n.style.display = 'none';
-    });
-  });
-
-  // Add new category
-  addCatBtn.addEventListener('click', () => {
-    const newCat = newCatInput.value.trim();
-    if (newCat) {
-      const categories = getCategories();
-      if (!categories.includes(newCat)) {
-        categories.push(newCat);
-        saveCategories(categories);
-        alert(`Category "${newCat}" added!`);
-      } else {
-        alert('Category already exists!');
-      }
-      newCatInput.value = '';
+let notes = [];
+let editIndex = null;
+  
+function getPrismLang(lang) {
+    // ADDED 'kotlin' to the map
+    const map = { html: 'markup', css: 'css', javascript: 'javascript', java: 'java', kotlin: 'kotlin', gdscript: 'gdscript',
+                  cpp: 'cpp', csharp: 'csharp', lua: 'lua', python: 'python' };
+    return map[lang] || 'clike';
+}
+  
+function getStorageKey(lang) { return `code_notes_${lang}`; }
+  
+function migrateNote(note) {
+    if (Array.isArray(note.codeBlocks)) {
+        // Ensure every block has a title field (old ones get empty string)
+        note.codeBlocks = note.codeBlocks.map(block =>
+            typeof block === 'string' ? { title: '', code: block } : block
+        );
+        return note;
     }
-  });
+    if (typeof note.code === 'string') {
+        return { ...note, codeBlocks: [{ title: '', code: note.code }], code: undefined };
+    }
+    return { ...note, codeBlocks: [{ title: '', code: '' }] };
+}
+  
+function loadNotes() {
+    const lang = document.getElementById("language").value;
+    const key = getStorageKey(lang);
+    const raw = localStorage.getItem(key);
+    notes = raw ? JSON.parse(raw).map(migrateNote) : [];
+    document.getElementById("current-lang").textContent = lang.toUpperCase();
+}
+  
+function saveNotes() {
+    const lang = document.getElementById("language").value;
+    const key = getStorageKey(lang);
+    localStorage.setItem(key, JSON.stringify(notes));
+}
+  
+function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+  
+function parseInlineCode(text) {
+    return text.replace(/''(.+?)''/g, '<span class="inline-code">$1</span>');
+}
+  
+function parseBullets(text) {
+    const lines = text.split('\n');
+    let html = '', inList = false;
+    for (let line of lines) {
+        let processed = parseInlineCode(escapeHtml(line));
+        if (line.trim().startsWith('*-')) {
+            if (!inList) html += '<ul>'; inList = true;
+            html += `<li>${processed.slice(2).trim() || '&nbsp;'}</li>`;
+        } else {
+            if (inList) html += '</ul>', inList = false;
+            if (processed.trim()) html += `<p>${processed}</p>`;
+        }
+    }
+    if (inList) html += '</ul>';
+    return html || '<p><em>No description</em></p>';
+}
+  
+function addCodeBlock() {
+    const container = document.getElementById("code-blocks");
+    const block = document.createElement("div");
+    block.className = "code-block";
+    block.innerHTML = `
+        <button class="remove-block" onclick="this.parentElement.remove()">−</button>
+        <input type="text" class="block-title" placeholder="Optional block title (e.g. Example, Alternative)">
+        <textarea class="code-input" placeholder="Additional code block..."></textarea>  `;
+container.appendChild(block);
 
-  addBtn.addEventListener('click', () => createNote());
-  window.addEventListener('load', loadNotes);
+}
+
+function getAllCodeBlocks() {
+const blocks = document.querySelectorAll(".code-block");
+return Array.from(blocks).map(b => ({
+title: (b.querySelector(".block-title") || {}).value || "",
+code: b.querySelector(".code-input").value.trim()
+}));
+}
+
+function switchLanguage() {
+clearForm();
+editIndex = null;
+loadNotes();
+updateFilterDropdown();
+renderNotes();
+}
+
+function clearForm() {
+document.getElementById('title').value = '';
+document.getElementById('definition').value = '';
+document.getElementById('category').value = '';
+document.getElementById('code-blocks').innerHTML = `<div class="code-block"><textarea class="code-input" placeholder="Main code block..."></textarea></div>`;
+}
+
+function addNote() {
+const title = document.getElementById('title').value.trim();
+const definition = document.getElementById('definition').value.trim();
+const category = document.getElementById('category').value.trim();
+const codeBlocks = getAllCodeBlocks();
+const language = document.getElementById('language').value;
+
+if (!title || !definition || !category || codeBlocks.length === 0 || !codeBlocks[0].code) {
+    showToast("Title, description, category, and main code block are required!", true);
+    return;
+}
+
+notes.push({ title, definition, category, codeBlocks, language });
+saveNotes();
+addCategoryToFilter(category);
+clearForm();
+renderNotes();
+showToast("Note Added!");
+
+}
+
+function updateNote() {
+if (editIndex === null) return;
+const title = document.getElementById('title').value.trim();
+const definition = document.getElementById('definition').value.trim();
+const category = document.getElementById('category').value.trim();
+const codeBlocks = getAllCodeBlocks();
+
+if (!title || !definition || !category || codeBlocks.length === 0 || !codeBlocks[0].code) {
+    showToast("All fields and main code block required!", true);
+    return;
+}
+
+notes[editIndex] = { title, definition, category, codeBlocks, language: document.getElementById('language').value };
+saveNotes();
+clearForm();
+document.getElementById('add-btn').style.display = 'block';
+document.getElementById('update-btn').style.display = 'none';
+document.getElementById('form-title').textContent = "Add New Note";
+editIndex = null;
+renderNotes();
+updateFilterDropdown();
+showToast("Note Updated!");
+
+}
+
+function editNote(index) {
+const note = notes[index];
+document.getElementById('title').value = note.title;
+document.getElementById('definition').value = note.definition;
+document.getElementById('category').value = note.category;
+
+const container = document.getElementById('code-blocks');
+container.innerHTML = '';
+note.codeBlocks.forEach((block, i) => {
+    const div = document.createElement("div");
+    div.className = "code-block";
+    if (i > 0) {
+        div.innerHTML = `<button class="remove-block" onclick="this.parentElement.remove()">−</button>`;
+    }
+    if (i > 0) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "block-title";
+        input.placeholder = "Optional block title (e.g. Example, Alternative)";
+        input.value = block.title || "";
+        div.appendChild(input);
+    }
+    const textarea = document.createElement("textarea");
+    textarea.className = "code-input";
+    textarea.placeholder = i === 0 ? "Main code block..." : "Additional code block...";
+    textarea.value = block.code || "";
+    div.appendChild(textarea);
+    container.appendChild(div);
+});
+
+document.getElementById('add-btn').style.display = 'none';
+document.getElementById('update-btn').style.display = 'block';
+document.getElementById('form-title').textContent = "Edit Note";
+editIndex = index;
+window.scrollTo({ top: 0, behavior: 'smooth' });
+
+}
+
+function deleteNote(index) {
+if (confirm("Delete this note forever?")) {
+notes.splice(index, 1);
+saveNotes();
+renderNotes();
+updateFilterDropdown();
+showToast("Note Deleted.");
+}
+}
+
+// Fixed function to copy code using the button element
+function copyCode(buttonElement) {
+    const preElement = buttonElement.closest('pre');
+    const codeElement = preElement ? preElement.querySelector('code') : null;
+
+    if (codeElement) {
+        const code = codeElement.innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            showToast("Code Copied!");
+        }).catch(err => {
+            showToast("Failed to copy code.", true);
+            console.error('Could not copy text: ', err);
+        });
+    }
+}
+
+function renderNotes() {
+const container = document.getElementById('notes-container');
+container.innerHTML = '';
+
+const searchTerm = document.getElementById('search').value.toLowerCase();
+const filterCat = document.getElementById('filter').value;
+
+let filtered = notes;
+if (filterCat !== 'all') filtered = filtered.filter(n => n.category === filterCat);
+if (searchTerm) filtered = filtered.filter(n => n.title.toLowerCase().includes(searchTerm));
+
+if (filtered.length === 0) {
+    container.innerHTML = `<p style="text-align:center;color:#8b949e;padding:50px;">
+        ${searchTerm || filterCat !== 'all' ? 'No notes match your search.' : 'No notes yet — create your first one!'}</p>`;
+    return;
+}
+
+filtered.forEach((note, i) => {
+    const idx = notes.indexOf(note);
+    const prismLang = getPrismLang(note.language);
+    let codeHTML = '';
+
+    note.codeBlocks.forEach((block, blockIdx) => {
+        if (blockIdx > 0 && block.title) {
+            codeHTML += `<div class="block-subtitle">${escapeHtml(block.title)}</div>`;
+        }
+        // Corrected HTML template for copy button
+        codeHTML += `<pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="language-${prismLang}">${escapeHtml(block.code || "")}</code></pre>`;
+        if (blockIdx < note.codeBlocks.length - 1) {
+            codeHTML += '<hr style="border-color:#30363d;margin:20px 0;">';
+        }
+    });
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+        <div class="card-header">
+            <h3>${escapeHtml(note.title)}</h3>
+            <span class="category-tag">${escapeHtml(note.category)}</span>
+        </div>
+        <div class="card-body">
+            ${parseBullets(note.definition)}
+            ${codeHTML}
+        </div>
+        <div class="card-buttons">
+            <button class="btn-success" onclick="editNote(${idx})">Edit</button>
+            <button class="btn-danger" onclick="deleteNote(${idx})">Delete</button>
+        </div>
+    `;
+    container.appendChild(card);
+});
+
+Prism.highlightAll();
+
+}
+
+function addCategoryToFilter(cat) {
+const select = document.getElementById('filter');
+if ([...select.options].every(o => o.value !== cat)) {
+select.add(new Option(cat, cat));
+}
+}
+
+function updateFilterDropdown() {
+const select = document.getElementById('filter');
+const cats = [...new Set(notes.map(n => n.category))].sort();
+select.innerHTML = '<option value="all">All Categories</option>';
+cats.forEach(c => select.add(new Option(c, c)));
+}
+
+function exportNotes() {
+const lang = document.getElementById("language").value;
+if (notes.length === 0) {
+    showToast("No notes to export!", true);
+    return;
+}
+const data = JSON.stringify(notes, null, 2);
+const blob = new Blob([data], {type: 'application/json'});
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `code-notes-${lang}-${new Date().toISOString().slice(0,10)}.json`;
+a.click();
+URL.revokeObjectURL(url);
+showToast("Notes Exported!");
+}
+
+function importNotes() {
+const file = document.getElementById('import-file').files[0];
+if (!file) {
+    showToast("Select a file first!", true);
+    return;
+}
+const reader = new FileReader();
+reader.onload = e => {
+try {
+const data = JSON.parse(e.target.result);
+if (!Array.isArray(data)) throw "Invalid";
+notes = data.map(n => migrateNote({
+title: n.title || "",
+definition: n.definition || "",
+category: n.category || "General",
+codeBlocks: n.codeBlocks || (typeof n.code === "string" ? [{title:"",code:n.code}] : [{title:"",code:""}]),
+language: document.getElementById("language").value
+}));
+saveNotes();
+updateFilterDropdown();
+renderNotes();
+showToast("Notes Imported successfully!");
+} catch { showToast("Invalid file format!", true); }
+};
+reader.readAsText(file);
+}
+
+// Toast Notification System
+function showToast(message, isError = false) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast' + (isError ? ' error' : '');
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    // Force reflow to enable transition
+    void toast.offsetWidth;
+
+    // Show toast
+    toast.classList.add('show');
+
+    // Hide toast after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        // Remove from DOM after transition
+        setTimeout(() => {
+            toast.remove();
+        }, 300); // Should match CSS transition time
+    }, 3000);
+}
+
+// Init
+loadNotes();
+updateFilterDropdown();
+renderNotes();
 </script>
+
 </body>
 </html>
